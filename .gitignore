@@ -1,2 +1,4 @@
 # Ignore directory
-img/
+img
+# Ignore files extension
+*.JPG
