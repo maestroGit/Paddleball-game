@@ -1,0 +1,14 @@
+/* Reset rules */
+
+html,
+body {
+    box-sizing: border-box;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+canvas {
+    border: 1px solid wheat;
+    background-color: black;
+}
