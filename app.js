@@ -13,13 +13,20 @@ console.log(canvas.width);
 console.log(canvas.height);
 
 let radio = 10;
+let r = 0.20;
 let x = 10 + radio;
 let y = canvas.height - radio;
 let mx = 2;
 let my = -2;
-const paddleWidth = 10;
+const paddleWidth = 8;
 let paddleHeight = 100;
 let speed = 2;
+
+// score
+const score = {
+    x: canvas.width * 0.90,
+    y: canvas.height / 14,
+};
 
 // ball
 const ball = {
@@ -54,13 +61,14 @@ const paddeluser = {
 };
 
 // Draw axes lines
-const linesBetwenPoints = (p1, p2, color = "#e5dede") => {
+const linesBetwenPoints = (p1, p2, color = "#e5dede", size) => {
     ctx.beginPath();
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = size;
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
+    //ctx.strokeText(speed, (p2.x, p2.y), 50);
     ctx.closePath();
 };
 
@@ -75,6 +83,9 @@ const restart = () => {
     paddeluser.height = paddleHeight;
     paddeluser.y = (canvas.height - paddleHeight) / 2;
     ball.color = "red";
+    speed = 2;
+    radio = 10;
+    r = 0.25;
 }
 
 const circlesColision = (ball, circle) => {
@@ -82,11 +93,17 @@ const circlesColision = (ball, circle) => {
     let dy = circle.y - ball.y;
     // Pitagoras para calcular hipotenusa = distancia
     let distance = Math.sqrt(dx * dx + dy * dy);
+    //console.log(distance.toFixed(1));
     let sumOfradius = ball.radius + circle.radius;
     if (distance < sumOfradius) {
         canvas.style = "background-color: coral";
         ball.color = "purple";
-    } else if (distance == sumOfradius) {
+        // limiatar el incremento de r con un tope
+        r += 0.60;
+        console.log(r);
+        return true
+    }
+    if (distance == sumOfradius) {
         console.log(distance + " TOUCHING " + sumOfradius);
         ball.color = "black";
     }
@@ -104,14 +121,14 @@ const paddelColision = (rectangle, circle) => {
     circle.left = circle.x - circle.radius;
     circle.right = circle.x + circle.radius;
     if (rectangle.botton < circle.top) {
-        canvas.style = "background-color: blue";
+        //canvas.style = "background-color: blue";
         let point = { x: rectangle.left, y: rectangle.botton - (rectangle.height / 2) };
-        linesBetwenPoints(point, circle, "grey");
+        linesBetwenPoints(point, circle, "red", 1);
     }
     if (rectangle.top > circle.top) {
-        canvas.style = "background-color: aqua";
+        //canvas.style = "background-color: aqua";
         let point = { x: rectangle.left, y: rectangle.botton - (rectangle.height / 2) };
-        linesBetwenPoints(point, circle, "yellow");
+        linesBetwenPoints(point, circle, "yellow", 1);
     }
     //return circle.right > rectangle.left && circle.top > rectangle.botton && circle.left < rectangle.right && circle.bottom > rectangle.top
     //rango altura y ancho => rectangle.botton > circle.top && rectangle.top < circle.top && circle.left < rectangle.right;
@@ -126,11 +143,12 @@ const paddelColision = (rectangle, circle) => {
 // Math.sqrt(v1*v1 + v2*v2) === Math.hypot(v1, v2)
 const distanceCalc = (p1, p2) => {
     let d = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-    return d.toFixed(2);
+    return d.toFixed(1);
 };
 
 const drawCircle = (circleOjt) => {
     ctx.beginPath();
+    ctx.lineWidth = "0";
     ctx.arc(circleOjt.x, circleOjt.y, circleOjt.radius, 0, 2 * Math.PI);
     ctx.fillStyle = circleOjt.color;
     ctx.fill();
@@ -144,10 +162,40 @@ const drawCircle = (circleOjt) => {
 // Draw bar rectagle
 const drawRectagle = (rectangleObj) => {
     ctx.beginPath();
-    ctx.lineWidth = "1";
+    ctx.lineWidth = "0";
     ctx.fillStyle = rectangleObj.color;
     ctx.rect(rectangleObj.x, rectangleObj.y, paddleWidth, rectangleObj.height);
     ctx.fill();
+};
+
+// Draw Text
+const drawText = (text, loc, color = "white") => {
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "bold 20px Montserrat";
+    ctx.fillText(text, loc.x, loc.y);
+};
+
+//punto medio entre dos puntos
+const middlepoint = (pA, pB) => {
+    ctx.beginPath();
+    let midel = (pA.x - pB.x) / 2;
+    let sizerectangle = 10;
+    ctx.rect(pB.x - sizerectangle / 2 + midel, pA.y, sizerectangle, 10);
+    ctx.lineWidth = 2;
+    ctx.fillStyle = "#AD5C40";
+    ctx.fill();
+    ctx.stroke();
+};
+
+// Average
+const average = (p1, p2) => {
+    return {
+        x: (p1.x + p2.x) / 2,
+        y: (p1.y + p2.y) / 2,
+    };
 };
 
 // Upsdate loop
@@ -157,19 +205,22 @@ const animation = () => {
         event.preventDefault();
         paddeluser.y = event.clientY - paddleHeight * 0.5;
     });
-    linesBetwenPoints({ x: canvas.width / 2, y: 0 }, { x: canvas.width / 2, y: canvas.height });
+    linesBetwenPoints({ x: canvas.width / 2, y: 0 }, { x: canvas.width / 2, y: canvas.height }, "white", 1);
     linesBetwenPoints({ x: 0, y: canvas.height / 2 }, { x: canvas.width, y: canvas.height / 2 });
-    linesBetwenPoints(ball, circle);
+    linesBetwenPoints(ball, circle, "orange");
+    drawText(distanceCalc(ball, paddeluser), average(ball, paddeluser), (color = "red"));
+    drawText(distanceCalc(ball, circle), average(ball, circle), (color = "orange"));
+    drawText(speed, score, "peru");
     drawRectagle(paddeluser);
     x += mx;
     y += my;
     ball.y += ball.velocitiY;
     ball.x += ball.velocitiX;
+    if (circlesColision(ball, circle)) { ball.radius = radio * r };
     drawCircle(ball);
-    drawCircle(circle)
-    circlesColision(ball, circle);
+    drawCircle(circle);
     if (paddelColision(paddeluser, ball) === true) {
-        canvas.style = "background-color: green";
+        //canvas.style = "background-color: green";
         ball.color = "green";
         speed++;
         console.log(speed);
@@ -192,11 +243,11 @@ const animation = () => {
         ball.velocitiY = -2;
     }
     if (paddelColision(paddeluser, circle) === true) {
-        canvas.style = "background-color: orange";
+        //canvas.style = "background-color: orange";
         ball.color = "green";
         //speed++;
         //ball.velocitiX = speed;
-        paddeluser.height += 5;
+        paddeluser.height += 25;
     }
     circle.x = x;
     circle.y = y;
